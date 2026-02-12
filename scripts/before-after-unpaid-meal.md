@@ -52,10 +52,10 @@ Set Variable [ $hrs_after_unpaid_meal ; Value: GLO_TCD_CTR__Contract::hrs_after_
 Set Variable [ $hrs_between_unpaid_meal ; Value: If ( $hrs_before_unpaid_meal ≤ 0 or $hrs_after_unpaid_meal ≤ 0; 	Max ( $hrs_before_unpaid_meal; $hrs_after_unpaid_meal ); 	Min ( $hrs_before_unpaid_meal; $hrs_after_unpaid_meal ) ) ]
 Set Variable [ $hrs_meal_break_max ; Value: Let ( 	~max = GLO_TCD_CTR__Contract::hrs_meal_break_max; 	If ( IsEmpty ( ~max ); 		24; 		~max 	) ) ]
 #  KL 03/03/2022 Since BH changed contract to Minimums are Unworked Time, BUT this rule should still create worked time as per the beautiful Michelle
-Set Variable [ $minimums_are_worked_time ; Value: True ]
+// Set Variable [ $minimums_are_worked_time ; Value: True ]
 # @history 08/07/2024, chris.corsi@proofgeist.com - @TODO - finish rewrite of minimums overlap
-// # @history Jun 28, 2024, chris.corsi@proofgeist.com - stepped back on this, mins should be unworked
-// Set Variable [ $minimums_are_worked_time ; Value: GetAsBoolean ( GLO_TCD_CTR__Contract::minimums_are_worked_time ) ]
+# @history Jun 28, 2024, chris.corsi@proofgeist.com - stepped back on this, mins should be unworked
+Set Variable [ $minimums_are_worked_time ; Value: GetAsBoolean ( GLO_TCD_CTR__Contract::minimums_are_worked_time ) ]
 # 
 #  With the advent of multiple minimum call values, extra work is required to accurately determine what it should be.
 If [ not IsEmpty ( GLO_TCD_CTR__Contract::hrs_minimum_call ) ]
@@ -139,6 +139,30 @@ End Loop
 #  Instanciate a mode-specific record count variable.
 Set Variable [ $record_count ; Value: Evaluate ( "$$" & $$this_mode & "_count" ) ]
 # 
+# @history 02/12/2026, chris.corsi@proofgeist.com - Account for Minimum Call unworked credits.
+#   When minimums_are_worked_time = False, Minimum Calls (rule 3) creates entries in $$unwork[]
+#   instead of $$bill/$$pay. Without this loop, Before/After can't see those entries and may create
+#   redundant shortfall entries for the same gap. Sum MC unworked credits and add to $since_last_meal
+#   so the shortfall checks account for time already credited.
+#   Note: credit is applied at initialization, so it primarily covers the first gap encountered.
+#   Multi-gap time cards with MC entries at later gaps may not be fully covered — this is conservative
+#   (under-credits rather than over-credits) and can be refined if needed.
+Set Variable [ $mc_unwork_credit ; Value: 0 ]
+Set Variable [ $j ; Value: 0 ]
+Loop [ Flush: Always ]
+Exit Loop If [  Let ( $j = $j + 1; $j > $$unwork_count ) ]
+Set Variable [ $uw_record ; Value: Evaluate ( "$$unwork[$j]" ) ]
+Set Variable [ $uw_isBill ; Value: CF_getProperty ( $uw_record; GFN ( TCL__TimeCardLine::isBill )) ]
+Set Variable [ $uw_isPay ; Value: CF_getProperty ( $uw_record; GFN ( TCL__TimeCardLine::isPay )) ]
+If [ ( $$this_mode = "bill" and $uw_isBill ) or ( $$this_mode = "pay" and $uw_isPay ) ]
+Set Variable [ $uw_isMinimumCall ; Value: GetAsBoolean ( CF_getProperty ( $uw_record; GFN ( TCL__TimeCardLine::isMinimumCall ))) ]
+If [ $uw_isMinimumCall ]
+Set Variable [ $mc_unwork_credit ; Value: $mc_unwork_credit + GetAsTime ( CF_getProperty ( $uw_record; GFN ( TCL__TimeCardLine::hrsUnworked ))) ]
+End If
+End If
+End Loop
+Set Variable [ $since_last_meal ; Value: $since_last_meal + $mc_unwork_credit ]
+# 
 #  Prepare a bucket to count work since the start of the call
 Set Variable [ $since_start_of_call ; Value: $since_last_meal ]
 # 
@@ -196,7 +220,9 @@ Perform Script [ “Create Worked Entry” ; Specified: From list ; Parameter: L
 # *********************
 # KL 12-20-21
 # this was causing an infnite loop, VM disabled 02/22
-// Set Variable [ $record_count ; Value: $record_count + 1 ]
+# @history 02/12/2026, chris.corsi@proofgeist.com - reinstate this counter
+Set Variable [ $record_count ; Value: $record_count + 1 ]
+Set Variable [ $tcl_loop ; Value: $tcl_loop + 1 ]
 # *********************
 # 
 # 
@@ -227,7 +253,9 @@ Perform Script [ “Create Worked Entry” ; Specified: From list ; Parameter: L
 # *********************
 # KL 12-20-21
 # this was causing an infnite loop, VM disabled 02/22
-// Set Variable [ $record_count ; Value: $record_count + 1 ]
+Set Variable [ $record_count ; Value: $record_count + 1 ]
+# @history 02/12/2026, chris.corsi@proofgeist.com - reinstate this counter
+Set Variable [ $tcl_loop ; Value: $tcl_loop + 1 ]
 # *********************
 # 
 Else
@@ -296,7 +324,9 @@ Perform Script [ “Create Worked Entry” ; Specified: From list ; Parameter: L
 # *********************
 # KL 12-20-21
 # this was causing an infnite loop, VM disabled 02/22
-// Set Variable [ $record_count ; Value: $record_count + 1 ]
+# @history 02/12/2026, chris.corsi@proofgeist.com - reinstate this counter
+Set Variable [ $tcl_loop ; Value: $tcl_loop + 1 ]
+Set Variable [ $record_count ; Value: $record_count + 1 ]
 # *********************
 # 
 Else
@@ -380,5 +410,6 @@ Set Variable [ $result ; Value: List	( 	"error="			& If ( IsEmpty ( $error ); 0;
 #  That's it - exit script!
 Exit Script [ Text Result: $result		//  We always return the result variable  ]
 # 
+
 
 ```

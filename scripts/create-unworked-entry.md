@@ -60,18 +60,26 @@ Set Variable [ $isAfterMidnight ; Value: Let ([ 	~ts_date	= GetAsDate ( CF_getPr
 Set Variable [ $null ; Value: Let ( 	$$unwork_count = $$unwork_count + 1; 	CF_SetVarByName ( "$$unwork"; $$unwork_count; $source ) ) ]
 # 
 # @history 08/07/2024, chris.corsi@proofgeist.com - Finish reworking unworked entry to consider updated source fields
-// # @history Jul 15, 2024, chris.corsi@proofgeist.com - if they provided new times, the "source" times conflict with the new times, they need to be reset
-// # Parse the new time_in/time_out tsc
-// Set Variable [ $date ; Value: CF_getProperty ( $source; "date" ) ]
-// #  Set the "new" dates
-// If [ not IsEmpty ( $time_in ) ]
-// Set Variable [ $time_in_tsc ; Value: Timestamp ( $date ; $time_in ) ]
-// Set Variable [ $$unwork[$$unwork_count] ; Value: CF_setPropertyValue ( $$unwork[$$unwork_count]; GFN ( TCL__TimeCardLine::time_in_ts_c ); $time_in_tsc ) ]
-// End If
-// If [ not IsEmpty ( $time_out ) ]
-// Set Variable [ $time_out_tsc ; Value: Timestamp ( $date ; $time_out ) ]
-// Set Variable [ $$unwork[$$unwork_count] ; Value: CF_setPropertyValue ( $$unwork[$$unwork_count]; GFN ( TCL__TimeCardLine::time_out_ts_c ); $time_out_tsc ) ]
-// End If
+# @history Jul 15, 2024, chris.corsi@proofgeist.com - if they provided new times, the "source" times conflict with the new times, they need to be reset
+# @history 02/12/2026, chris.corsi@proofgeist.com - Uncommented timestamp fix: when callers provide
+#   new time_in/time_out values, the source record's time_in_ts_c and time_out_ts_c were preserved
+#   unchanged, causing inconsistent time data on the unworked record. Now reconstructs both timestamp
+#   fields from the source date + the provided times. This is a prerequisite for any downstream script
+#   that reads $$unwork[] entries by their timestamp fields (e.g., the Minimum Calls unworked loop).
+#   Also added $isAfterMidnight and midnight-wrap handling to match Create Worked Entry's pattern.
+
+# Parse the new time_in/time_out tsc
+Set Variable [ $date ; Value: CF_getProperty ( $source; "date" ) ]
+Set Variable [ $ts_date ; Value: $date + $isAfterMidnight ]
+#  Set the "new" dates
+If [ not IsEmpty ( $time_in ) ]
+Set Variable [ $time_in_tsc ; Value: Timestamp ( $ts_date ; $time_in ) ]
+Set Variable [ $$unwork[$$unwork_count] ; Value: CF_setPropertyValue ( $$unwork[$$unwork_count]; GFN ( TCL__TimeCardLine::time_in_ts_c ); $time_in_tsc ) ]
+End If
+If [ not IsEmpty ( $time_out ) ]
+Set Variable [ $time_out_tsc ; Value: Let ( ~date = If ( not $isAfterMidnight and $time_out < $time_in; $ts_date + 1; $ts_date ); Timestamp ( ~date ; $time_out ) ) ]
+Set Variable [ $$unwork[$$unwork_count] ; Value: CF_setPropertyValue ( $$unwork[$$unwork_count]; GFN ( TCL__TimeCardLine::time_out_ts_c ); $time_out_tsc ) ]
+End If
 # 
 #  Set a few fields
 Set Variable [ $$unwork[$$unwork_count] ; Value: CF_setPropertyValue ( $$unwork[$$unwork_count]; GFN ( TCL__TimeCardLine::time_in ); $time_in ) ]

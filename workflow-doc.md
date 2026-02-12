@@ -663,6 +663,8 @@ Set Variable [ $i ; Value: $i + 1 ]
 Set Variable [ $record_count ; Value: $record_count + 1 ]
 ```
 
+**Where to apply:** Only at the 3 "Create Worked Entry" call sites inside the Part 2 main loop (lines ~199, ~230, ~299 in the original script). NOT at the "Create Unworked Entry" sites (those write to `$$unwork[]`, not `$$bill/$$pay`). NOT at the Part 3 sites (after the loop has ended). See the [Before/After Unpaid Meal script](scripts/before-after-unpaid-meal.md) for exact locations.
+
 ### Secondary Issue: Meal Penalty Multiplicative — Stale `$record_count`
 
 The **"Meal Penalty - multiplicative"** script also caches `$record_count` before its main loop and never refreshes it after calling "Duplicate Rule Variable" for splits. This causes the same last-entry-skipped behavior when splits occur with multiple Clock lines. However, this only affects contracts using the multiplicative meal penalty variant.
@@ -692,6 +694,125 @@ The bug is most visible with:
 - [x] Review "Before/After Unpaid Meal" for multi-break handling — **ROOT CAUSE FOUND**
 - [x] Review "Write to Disk" for array count integrity — **CLEARED: uses `IsEmpty` exit, not count-based. Not contributing to bug.**
 - [x] Review "Duplicate Rule Variable" for count update mechanism — **confirmed only updates global, not caller's local**
-- [ ] Test fix: add `$tcl_loop + 1` alongside `$record_count + 1` in Before/After Unpaid Meal
-- [ ] Audit Meal Penalty Multiplicative for same fix pattern
-- [ ] Verify no other scripts have the same pattern
+- [ ] Apply fix: add `$tcl_loop + 1` alongside `$record_count + 1` at the 3 "Create Worked Entry" sites in Before/After Unpaid Meal
+- [ ] Un-hardcode `$minimums_are_worked_time` in Before/After Unpaid Meal (change `True` to `GetAsBoolean ( GLO_TCD_CTR__Contract::minimums_are_worked_time )`)
+- [ ] Audit Meal Penalty Multiplicative for same `$record_count` fix pattern
+- [ ] Verify no other scripts have the same stale-count pattern
+
+---
+
+## Changes Made — 02/12/2026
+
+### Summary
+
+Preparatory work to support un-hardcoding `$minimums_are_worked_time` in Before/After Unpaid Meal. When this flag reads from the contract (instead of being hardcoded to `True`), minimum entries go to `$$unwork[]` instead of `$$bill/$$pay`. Four fixes were needed to prevent overlap and data inconsistency between the two arrays.
+
+### 1. Create Unworked Entry — Timestamp Fix
+
+**File:** [create-unworked-entry.md](scripts/create-unworked-entry.md)
+
+**Problem:** When callers provided new `time_in`/`time_out` values, the source record's `time_in_ts_c` and `time_out_ts_c` were preserved unchanged. This caused inconsistent time data on the unworked record — `time_in` said 9:30 AM but `time_in_ts_c` said 8:45 PM (from the source Clock line).
+
+**Fix:** Uncommented and completed the timestamp reconstruction (lines 71-82). Now rebuilds both timestamp fields from `$date + $isAfterMidnight` and the provided times. Added midnight-wrap handling (`time_out < time_in` → next day) to match "Create Worked Entry"'s pattern. This is a prerequisite for any downstream script reading `$$unwork[]` by timestamps.
+
+### 2. Minimum Calls - BH — Unworked Loop
+
+**File:** [minimum-calls-bh.md](scripts/minimum-calls-bh.md)
+
+**Problem:** A commented-out second loop through `$$unwork[]` (from Jul 2024) was a full mirror of the main loop with gap detection, entry creation, and counter tracking. This had three bugs: (a) `$start_of_call_repetition` indexed `$$unwork[]` but was passed to "Create Worked Entry" which expects a `$$bill/$$pay` index; (b) no state reset between the main and unworked loops, causing stale `$last_time_out_ts_c`; (c) gap detection was meaningless because unworked entries aren't chronologically ordered relative to `$$bill/$$pay`.
+
+**Fix:** Simplified to an accumulate-only loop (lines 192-215). Iterates `$$unwork[]`, filters by mode, skips ignored and unpaid meal entries, and sums `$this_hrsUnworked` (not `$this_duration`) into `$running_total_worked`. The post-loop minimum check (line 220) then makes the correct shortfall decision using the combined worked + unworked total. No entry creation in this loop — that's the main loop's and post-loop check's job.
+
+### 3. Minimum Calls - BH — `hrsUnworked` vs `duration`
+
+**File:** [minimum-calls-bh.md](scripts/minimum-calls-bh.md)
+
+**Problem:** The unworked loop was using `$this_duration` (`time_out_ts_c - time_in_ts_c`) for running totals. For unworked entries, the timestamp span can differ from the actual credited time.
+
+**Fix:** Changed to `$this_hrsUnworked` at both accumulation points (isMinimumCall branch and else/"honest work" branch). `hrsUnworked` is the authoritative credited-time field — it's what callers explicitly set and what Write to Disk uses for column routing. Removed the `@DEV` comment that flagged this question.
+
+### 4. Before/After Unpaid Meal — MC Unworked Credit
+
+**File:** [before-after-unpaid-meal.md](scripts/before-after-unpaid-meal.md)
+
+**Problem:** When `minimums_are_worked_time = False`, Minimum Calls (rule 3) creates entries in `$$unwork[]`. Before/After Unpaid Meal (rule 4) loops only `$$bill/$$pay` and can't see them. When the deference check fails (B/A shortfall > MC shortfall), B/A creates an entry for the full shortfall without accounting for MC's existing credit, producing redundant entries.
+
+**Fix:** Added an `$$unwork[]` scan loop at the start of Part 2 (lines 150-164), before the main TCL loop. Sums `hrsUnworked` from all mode-matching `isMinimumCall` entries into `$mc_unwork_credit`, then adds this to `$since_last_meal`. Since `$since_start_of_call` is initialized from `$since_last_meal`, both counters get the credit. This reduces (or eliminates) the shortfall in the first gap check.
+
+**Known limitation:** The credit is applied at initialization, so it primarily covers the first gap encountered. After each gap, `$since_last_meal` resets to 0 and the credit is consumed. Multi-gap time cards with MC entries at later gaps may not be fully covered. This is conservative (under-credits rather than over-credits).
+
+---
+
+## Remaining Work
+
+### Must-do before deploying
+
+| # | Task | File | Notes |
+|---|------|------|-------|
+| 1 | **Apply the `$tcl_loop + 1` / `$record_count + 1` fix** | Before/After Unpaid Meal | The root cause fix for the multiple breaks bug. Uncomment `$record_count + 1` and add `$tcl_loop + 1` at the 3 "Create Worked Entry" sites inside Part 2's main loop. Do NOT touch the "Create Unworked Entry" sites or Part 3. |
+| 2 | **Un-hardcode `$minimums_are_worked_time`** | Before/After Unpaid Meal | Change line 55 from `True` to `GetAsBoolean ( GLO_TCD_CTR__Contract::minimums_are_worked_time )`. This activates the unworked path and all four fixes above. |
+
+### Should-do
+
+| # | Task | File | Notes |
+|---|------|------|-------|
+| 3 | **Audit Meal Penalty Multiplicative** | Meal Penalty - multiplicative | Same stale `$record_count` pattern — caches count before loop, never refreshes after splits. Needs the same `$i + 1` / `$record_count + 1` fix. Only affects contracts using the multiplicative variant. |
+| 4 | **Verify no other scripts have stale-count pattern** | All rule sub-scripts | Scan all scripts that call "Duplicate Rule Variable" to confirm they increment both the loop counter and `$record_count`. |
+
+### Known limitations to monitor
+
+| # | Limitation | Impact | When to revisit |
+|---|-----------|--------|-----------------|
+| 5 | **MC credit applied at initialization only** | Multi-gap time cards where MC created an entry at a *later* gap will under-credit that gap. First gap may be over-credited. | If testing reveals incorrect shortfall amounts on multi-gap time cards with `minimums_are_worked_time = False`. Fix would require per-gap timestamp matching against `$$unwork[]`. |
+| 6 | **Downstream rules don't see unworked minimums** | When `minimums_are_worked_time = False`, Night Rate, Daily OT, Weekly OT only iterate `$$bill/$$pay` and won't apply rate adjustments to unworked minimum entries. | If business rules require minimum call hours to accumulate toward OT thresholds or receive night differential. This was the original reason for the hardcoding ("per the beautiful Michelle"). |
+
+---
+
+## Testing Plan
+
+### Test Case 1: Multiple Breaks — Root Cause Fix
+
+**Prerequisite:** Apply remaining task #1 (`$tcl_loop + 1` / `$record_count + 1`).
+
+**Setup:** Time Card with 3+ Clock lines and short work segments between breaks (e.g., 3:00-8:00 AM, 9:00-9:30 AM, 8:45-11:45 PM). Contract with `hrs_before_unpaid_meal` set (e.g., 3 hours).
+
+**Steps:**
+1. Apply rules with `minimums_are_worked_time = True` (current hardcoded state)
+2. Verify all 3 Clock lines produce bill/pay records with correct before/after meal adjustments
+3. Verify no spurious or missing entries
+4. Compare against known-good output from before the changes (if available)
+
+**What to check:**
+- `$$bill_count` / `$$pay_count` matches the actual number of entries in the array
+- The last Clock line's bill/pay record has meal-related adjustments applied (not raw clock values)
+- No infinite loop (script completes in reasonable time)
+
+### Test Case 2: Un-hardcode `minimums_are_worked_time`
+
+**Prerequisite:** Apply remaining tasks #1 and #2.
+
+**Setup:** Same time card as Test 1. Contract with `minimums_are_worked_time = False`.
+
+**Steps:**
+1. Apply rules
+2. Verify minimum entries appear as Unworked records (not Billable/Payable)
+3. Verify `$$unwork[]` entries have correct, consistent timestamps (`time_in`/`time_out` match `time_in_ts_c`/`time_out_ts_c`)
+4. Verify no duplicate/redundant entries between Minimum Calls and Before/After Unpaid Meal
+5. Verify the Minimum Calls post-loop check correctly accounts for unworked credits (shortfall is reduced)
+
+### Test Case 3: MC + B/A Overlap Prevention
+
+**Setup:** Contract where minimum call < before-meal requirement (e.g., minimum = 2 hours, before-meal = 3 hours). Worker works 1 hour before a meal break. `minimums_are_worked_time = False`.
+
+**Expected:**
+- Minimum Calls creates a 1-hour unworked entry (2 - 1 = 1)
+- Before/After sees the MC credit, computes shortfall as 3 - 1 (work) - 1 (MC credit) = 1 hour
+- Before/After creates a 1-hour unworked entry
+- Total unworked credit: 2 hours (correct — the before-meal requirement minus actual work)
+- NOT 3 hours (which would happen without fix #4)
+
+### Test Case 4: Regression — `minimums_are_worked_time = True`
+
+**Setup:** Contract with `minimums_are_worked_time = True`. Same data as Tests 1-3.
+
+**Expected:** Behavior identical to before our changes. The unworked loops and MC credit scan are no-ops when all minimums go to `$$bill/$$pay` (no MC entries in `$$unwork[]` to find).
