@@ -161,7 +161,7 @@ Set Variable [ $mc_unwork_credit ; Value: $mc_unwork_credit + GetAsTime ( CF_get
 End If
 End If
 End Loop
-Set Variable [ $since_last_meal ; Value: $since_last_meal + $mc_unwork_credit ]
+Set Variable [ $since_last_meal ; Value: $since_last_meal + $mc_unwork_credit / 3600 ]
 # 
 #  Prepare a bucket to count work since the start of the call
 Set Variable [ $since_start_of_call ; Value: $since_last_meal ]

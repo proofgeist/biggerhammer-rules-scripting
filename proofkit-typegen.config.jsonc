@@ -1,0 +1,538 @@
+{
+  "$schema": "https://proofkit.dev/typegen-config-schema.json",
+  "config": [
+    {
+      "type": "fmodata",
+      "path": "schema",
+      "clearOldFiles": false,
+      "alwaysOverrideFieldNames": true,
+      "tables": [
+        {
+          "tableName": "TCL__TimeCardLine",
+          "fields": [
+            {
+              "fieldName": "__id"
+            },
+            {
+              "fieldName": "_company_id"
+            },
+            {
+              "fieldName": "_contact_id"
+            },
+            {
+              "fieldName": "_department_id"
+            },
+            {
+              "fieldName": "_contractRate_id"
+            },
+            {
+              "fieldName": "_contractPTOType_id"
+            },
+            {
+              "fieldName": "_contractJobTitle_id"
+            },
+            {
+              "fieldName": "_employeeRating_id"
+            },
+            {
+              "fieldName": "_event_id"
+            },
+            {
+              "fieldName": "_timecard_id"
+            },
+            {
+              "fieldName": "_timecardline_id"
+            },
+            {
+              "fieldName": "_vendor_id"
+            },
+            {
+              "fieldName": "column_multipliers"
+            },
+            {
+              "fieldName": "contact_name_full_c"
+            },
+            {
+              "fieldName": "contractJobTitleName"
+            },
+            {
+              "fieldName": "date"
+            },
+            {
+              "fieldName": "department"
+            },
+            {
+              "fieldName": "dollarsBaseRateModified"
+            },
+            {
+              "fieldName": "dollarsBaseRateOverride"
+            },
+            {
+              "fieldName": "dollarsBillRateBase"
+            },
+            {
+              "fieldName": "dollarsPayRateBase"
+            },
+            {
+              "fieldName": "dollarsTotal_c"
+            },
+            {
+              "fieldName": "dollarsTotalAndVacation_c"
+            },
+            {
+              "fieldName": "dollarsTotalAndVacation_s",
+              "exclude": true
+            },
+            {
+              "fieldName": "dollarsVacation_c"
+            },
+            {
+              "fieldName": "gl_code_c"
+            },
+            {
+              "fieldName": "gl_override",
+              "exclude": true
+            },
+            {
+              "fieldName": "hrsColumn0"
+            },
+            {
+              "fieldName": "hrsColumn0_s",
+              "exclude": true
+            },
+            {
+              "fieldName": "hrsColumn1"
+            },
+            {
+              "fieldName": "hrsColumn2"
+            },
+            {
+              "fieldName": "hrsColumn3"
+            },
+            {
+              "fieldName": "hrsColumn4"
+            },
+            {
+              "fieldName": "hrsColumn5"
+            },
+            {
+              "fieldName": "hrsUnworked"
+            },
+            {
+              "fieldName": "hrsWorked_c"
+            },
+            {
+              "fieldName": "ignoreEarly"
+            },
+            {
+              "fieldName": "ignoreGracePeriod"
+            },
+            {
+              "fieldName": "ignoreHoliday"
+            },
+            {
+              "fieldName": "ignoreMealPenatly"
+            },
+            {
+              "fieldName": "ignoreMinimumCall"
+            },
+            {
+              "fieldName": "ignoreNightRate"
+            },
+            {
+              "fieldName": "ignoreOvertime"
+            },
+            {
+              "fieldName": "isAfterMidnight"
+            },
+            {
+              "fieldName": "isBill"
+            },
+            {
+              "fieldName": "isConsecutiveDay6th"
+            },
+            {
+              "fieldName": "isConsecutiveDay7th"
+            },
+            {
+              "fieldName": "isConsecutiveDay8th"
+            },
+            {
+              "fieldName": "isContinuity"
+            },
+            {
+              "fieldName": "isDayOfWeek"
+            },
+            {
+              "fieldName": "isDayOfWeekSaturday"
+            },
+            {
+              "fieldName": "isDayOfWeekSunday"
+            },
+            {
+              "fieldName": "isDriveTime"
+            },
+            {
+              "fieldName": "isEarly"
+            },
+            {
+              "fieldName": "isExpense"
+            },
+            {
+              "fieldName": "isFlat"
+            },
+            {
+              "fieldName": "isMinimumCall"
+            },
+            {
+              "fieldName": "isMisc1"
+            },
+            {
+              "fieldName": "isMisc2"
+            },
+            {
+              "fieldName": "isMP1"
+            },
+            {
+              "fieldName": "isMP2"
+            },
+            {
+              "fieldName": "isNightRate"
+            },
+            {
+              "fieldName": "isOTDailyL1"
+            },
+            {
+              "fieldName": "isOTDailyL2"
+            },
+            {
+              "fieldName": "isOTWeekly"
+            },
+            {
+              "fieldName": "isOutOfWhack"
+            },
+            {
+              "fieldName": "isPaidMeal"
+            },
+            {
+              "fieldName": "isPay"
+            },
+            {
+              "fieldName": "isRecording"
+            },
+            {
+              "fieldName": "isTurnaround"
+            },
+            {
+              "fieldName": "isUnpaidMeal"
+            },
+            {
+              "fieldName": "month_year_c"
+            },
+            {
+              "fieldName": "noteRule"
+            },
+            {
+              "fieldName": "noteGracePeriod"
+            },
+            {
+              "fieldName": "time_in"
+            },
+            {
+              "fieldName": "time_in_ts_c"
+            },
+            {
+              "fieldName": "time_out"
+            },
+            {
+              "fieldName": "time_out_ts_c"
+            },
+            {
+              "fieldName": "timeDuration_c"
+            },
+            {
+              "fieldName": "total_pay_c"
+            },
+            {
+              "fieldName": "total_pay_employee_c"
+            }
+          ]
+        },
+        {
+          "tableName": "TCD__TimeCard",
+          "fields": [
+            {
+              "fieldName": "__id"
+            },
+            {
+              "fieldName": "_call_id"
+            },
+            {
+              "fieldName": "_contact_id"
+            },
+            {
+              "fieldName": "_contract_id"
+            },
+            {
+              "fieldName": "_defaultDepartment_id"
+            },
+            {
+              "fieldName": "_defaultJobTitle_id"
+            },
+            {
+              "fieldName": "_employeeRating_id"
+            },
+            {
+              "fieldName": "_event_id"
+            },
+            {
+              "fieldName": "_template_id"
+            },
+            {
+              "fieldName": "_timecardline_id"
+            },
+            {
+              "fieldName": "_vendor_id"
+            },
+            {
+              "fieldName": "additionalEarningsAmount"
+            },
+            {
+              "fieldName": "additionalEarningsCodeBill"
+            },
+            {
+              "fieldName": "additionalEarningsCodePay"
+            },
+            {
+              "fieldName": "additionalEarningsDescription"
+            },
+            {
+              "fieldName": "date"
+            },
+            {
+              "fieldName": "defaultDepartment"
+            },
+            {
+              "fieldName": "defaultJobTitles"
+            },
+            {
+              "fieldName": "status"
+            }
+          ]
+        },
+        {
+          "tableName": "EVE__Event",
+          "fields": [
+            {
+              "fieldName": "__id"
+            },
+            {
+              "fieldName": "_client_id"
+            },
+            {
+              "fieldName": "_company_id"
+            },
+            {
+              "fieldName": "_contract_id"
+            },
+            {
+              "fieldName": "code"
+            },
+            {
+              "fieldName": "Date_End",
+              "exclude": true
+            }
+          ]
+        },
+        {
+          "tableName": "CON__Contact",
+          "fields": [
+            {
+              "fieldName": "__id"
+            },
+            {
+              "fieldName": "Name_First"
+            },
+            {
+              "fieldName": "Name_Last"
+            },
+            {
+              "fieldName": "Name_Middle"
+            }
+          ]
+        },
+        {
+          "tableName": "CTR__Contract",
+          "fields": [
+            {
+              "fieldName": "__id"
+            },
+            {
+              "fieldName": "Name"
+            },
+            {
+              "fieldName": "hrs_after_unpaid_meal"
+            },
+            {
+              "fieldName": "hrs_before_unpaid_meal"
+            },
+            {
+              "fieldName": "hrs_minimum_call"
+            },
+            {
+              "fieldName": "mins_grace_period"
+            },
+            {
+              "fieldName": "hrs_meal_break_max"
+            },
+            {
+              "fieldName": "hrs_night_rate_carryover"
+            },
+            {
+              "fieldName": "mult_extra_loud"
+            },
+            {
+              "fieldName": "mult_holiday"
+            },
+            {
+              "fieldName": "mult_meal_penalty1"
+            },
+            {
+              "fieldName": "mult_meal_penalty2"
+            },
+            {
+              "fieldName": "mult_night"
+            },
+            {
+              "fieldName": "mult_overtime_daily_L1"
+            },
+            {
+              "fieldName": "mult_overtime_weekly"
+            },
+            {
+              "fieldName": "mult_recording"
+            },
+            {
+              "fieldName": "hrs_before_meal_penalty1"
+            },
+            {
+              "fieldName": "hrs_before_meal_penalty2"
+            },
+            {
+              "fieldName": "hrs_overtime_daily_L1"
+            },
+            {
+              "fieldName": "hrs_overtime_weekly"
+            },
+            {
+              "fieldName": "time_night_end"
+            },
+            {
+              "fieldName": "time_night_start"
+            },
+            {
+              "fieldName": "hrs_turnaround_night"
+            },
+            {
+              "fieldName": "mult_overtime_daily_L2"
+            },
+            {
+              "fieldName": "one"
+            },
+            {
+              "fieldName": "start_of_week"
+            },
+            {
+              "fieldName": "hrs_overtime_daily_L2"
+            },
+            {
+              "fieldName": "hrs_meal_penalty1"
+            },
+            {
+              "fieldName": "hrs_6th_day"
+            },
+            {
+              "fieldName": "hrs_7th_day"
+            },
+            {
+              "fieldName": "mult_6th_day"
+            },
+            {
+              "fieldName": "mult_7th_day"
+            },
+            {
+              "fieldName": "mins_work_unit"
+            },
+            {
+              "fieldName": "hrs_meal_penalty2"
+            },
+            {
+              "fieldName": "hrs_meal_break_min"
+            },
+            {
+              "fieldName": "expense_description"
+            },
+            {
+              "fieldName": "expense_amount"
+            },
+            {
+              "fieldName": "mult_minimum_call"
+            },
+            {
+              "fieldName": "minimums_are_worked_time"
+            },
+            {
+              "fieldName": "minimums_included_in_OT"
+            },
+            {
+              "fieldName": "minimums_included_in_NT"
+            },
+            {
+              "fieldName": "isPlaceholder",
+              "exclude": true
+            },
+            {
+              "fieldName": "display_modifiers_calc"
+            },
+            {
+              "fieldName": "require_CJT"
+            },
+            {
+              "fieldName": "code"
+            },
+            {
+              "fieldName": "type"
+            },
+            {
+              "fieldName": "dollars_total_calc"
+            },
+            {
+              "fieldName": "venue"
+            },
+            {
+              "fieldName": "isDefault"
+            }
+          ]
+        },
+        {
+          "tableName": "CJT__ContractJobTitle",
+          "fields": [
+            {
+              "fieldName": "__id"
+            },
+            {
+              "fieldName": "_contract_id"
+            },
+            {
+              "fieldName": "_jobtitle_id"
+            },
+            {
+              "fieldName": "Name"
+            }
+          ]
+        }
+      ],
+      "includeAllFieldsByDefault": false
+    }
+  ]
+}

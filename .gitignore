@@ -3,3 +3,6 @@
 *.swo
 .idea/
 .vscode/
+node_modules/
+dist/
+.env
