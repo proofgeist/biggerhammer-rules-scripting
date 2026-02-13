@@ -201,45 +201,14 @@ If [ False ]
 # 
 #  If the gap in the timeline is more than the Maximum meal break...
 Else If [ ( $this_time_in_ts_c - $last_time_out_ts ) / 3600 > $hrs_meal_break_max ]
-# 
-#  If the crew worked enough to satisify the Before/After Unpaid Meal rule...
-If [ $since_unpaid_meal ≥ $hrs_after_unpaid_meal ]
-#  All good, this rule does not apply - yet.
-Else
-# 
-#  If the Minimum Call rule will apply  AND  Minimum Call rule will require a longer-duration time record...
-If [ $since_start_of_call < $hrs_minimum_call 	and $hrs_minimum_call - $since_start_of_call ≥ $hrs_after_unpaid_meal - $since_unpaid_meal ]
-#  Leave it for the Minimum Call rule to create the Minimum Call record.
+#
+# @history 02/12/2026, chris.corsi@proofgeist.com - New call boundary; skip B/A.
+#   When the gap exceeds the maximum meal break, this is a new call, not a meal
+#   dismissal. Do not apply the after-unpaid-meal rule across the gap. The bucket
+#   resets below handle the transition ($since_start_of_call = 0, etc.).
+#   Previously this branch checked $since_unpaid_meal against $hrs_after_unpaid_meal
+#   and could create spurious shortfall entries spanning the inter-call gap.
 Set Variable [ $call_count ; Value: $call_count + 1 ]
-# 
-Else
-#  we need to create a Minimum record.
-If [ $minimums_are_worked_time ]
-Perform Script [ “Create Worked Entry” ; Specified: From list ; Parameter: Let ([ 	~missing		= $work_requirement - $since_last_meal; 	~last_out	= GetAsTime ( $last_time_out_ts ); 	~new_out		= ~last_out + ( ~missing * 3600 ) ]; 	List ( 		"iSource="	& Max ( $tcl_loop - 1; 1 ); 		"time_in="	& CF_TimeFormat ( ~last_out ); 		"time_out="	& CF_TimeFormat ( ~new_out ); 		"incl_NT="	& $incl_NT; 		"incl_OT="	& $incl_OT; 		"note="		& "Before unpaid meal rule applied"; 	) ) ]
-# 
-# *********************
-# KL 12-20-21
-# this was causing an infnite loop, VM disabled 02/22
-# @history 02/12/2026, chris.corsi@proofgeist.com - reinstate this counter
-Set Variable [ $record_count ; Value: $record_count + 1 ]
-Set Variable [ $tcl_loop ; Value: $tcl_loop + 1 ]
-# *********************
-# 
-# 
-Else
-Perform Script [ “Create Unworked Entry” ; Specified: From list ; Parameter: Let ([ 	~requirement = Case ( 		$call_count = 0; 			$hrs_before_unpaid_meal; 		( $this_time_in_ts - $last_time_out_ts ) / 3600 > $hrs_meal_break_max; 			$hrs_after_unpaid_meal; 		$hrs_between_unpaid_meal 	); 	~duration = GetAsTime (( ~requirement - $since_last_meal ) * 3600 ) ]; 	List ( 		"source="		& CF_addPSlashes ( $this_record ); 		"hrsUnworked="	& ~duration; 		"time_in="		& CF_TimeFormat ( GetAsTime ( $last_time_out_ts )); 		"time_out="		& CF_TimeFormat ( GetAsTime ( $last_time_out_ts + ~duration )); 		"incl_NT="		& $incl_NT; 		"incl_OT="		& $incl_OT; 		"note="			& "Before unpaid meal rule applied"; 	) ) ]
-# 
-# 
-# 
-# *********************
-# KL 12-20-21
-# this was causing an infnite loop, VM disabled 02/22
-// Set Variable [ $record_count ; Value: $record_count + 1 ]
-# *********************
-# 
-End If
-End If
-End If
 # 
 #  If there isn't enough paid time since our last meal break...
 Else If [ Let ( 	$work_requirement = If ( $meal_counter = 0; 		$hrs_before_unpaid_meal; 		$hrs_between_unpaid_meal 	); 	$since_last_meal < $work_requirement ) ]
