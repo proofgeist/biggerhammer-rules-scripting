@@ -12,6 +12,7 @@ function requireEnv(name: string): string {
 const connection = new FMServerConnection({
 	serverUrl: requireEnv("FM_SERVER"),
 	auth: { apiKey: requireEnv("OTTO_API_KEY") },
+	fetchClientOptions: { timeout: 30_000 },
 });
 
 export const db = connection.database(requireEnv("FM_DATABASE"));
@@ -19,8 +20,10 @@ export const db = connection.database(requireEnv("FM_DATABASE"));
 export {
 	CJT__ContractJobTitle,
 	CON__Contact,
+	CRU__ContractRule,
 	CTR__Contract,
 	EVE__Event,
+	RUL__Rule,
 	TCD__TimeCard,
 	TCL__TimeCardLine,
 } from "../schema/index.js";

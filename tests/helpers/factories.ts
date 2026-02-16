@@ -1,8 +1,10 @@
 import { eq } from "@proofkit/fmodata";
 import {
 	CJT__ContractJobTitle,
+	CRU__ContractRule,
 	CTR__Contract,
 	db,
+	RUL__Rule,
 	TCD__TimeCard,
 	TCL__TimeCardLine,
 } from "../../src/client.js";
@@ -309,4 +311,114 @@ export function parseTimeToHours(time: string): number {
 		parseInt(parts[1], 10) / 60 +
 		parseInt(parts[2] ?? "0", 10) / 3600
 	);
+}
+
+// ---------------------------------------------------------------------------
+// Contract Rule (CRU) helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Find a master Rule record by name. These are shared records (not test-created).
+ * Throws if the rule is not found.
+ */
+export async function findRule(name: string) {
+	const result = await db
+		.from(RUL__Rule)
+		.list()
+		.where(eq(RUL__Rule.name, name))
+		.execute();
+
+	if (result.error)
+		throw new Error(`Failed to query RUL__Rule: ${result.error}`);
+	if (result.data.length === 0)
+		throw new Error(
+			`Rule "${name}" not found in RUL__Rule. Available rules may differ.`,
+		);
+
+	return result.data[0];
+}
+
+/**
+ * Create a CRU__ContractRule record linking a rule to a contract.
+ * Returns the created record including its __id.
+ */
+export async function createContractRule(params: {
+	ruleId: string;
+	contractId: string;
+	sequence?: number;
+	hour1?: number;
+	hour2?: number;
+	multiplier1?: number;
+	multiplier2?: number;
+	time1?: string;
+	time2?: string;
+	day?: string;
+	ordinal?: string;
+	operation?: string;
+	enabled?: number;
+	scope?: string;
+	minutes?: number;
+	label?: string;
+	field?: string;
+}) {
+	const result = await db
+		.from(CRU__ContractRule)
+		.insert({
+			_rule_id: params.ruleId,
+			_contract_id: params.contractId,
+			sequence: params.sequence ?? 1,
+			hour1: params.hour1 ?? 0,
+			hour2: params.hour2 ?? 0,
+			multiplier1: params.multiplier1 ?? 0,
+			multiplier2: params.multiplier2 ?? 0,
+			time1: params.time1 ?? "",
+			time2: params.time2 ?? "",
+			day: params.day ?? "",
+			ordinal: params.ordinal ?? "",
+			operation: params.operation ?? "",
+			enabled: params.enabled ?? 1,
+			scope: params.scope ?? "",
+			minutes: params.minutes ?? 0,
+			label: params.label ?? "",
+			field: params.field ?? "",
+		})
+		.execute();
+
+	if (result.error)
+		throw new Error(`Failed to create ContractRule: ${result.error}`);
+	return result.data;
+}
+
+/**
+ * Delete a CRU__ContractRule record by __id. Used in test teardown.
+ */
+export async function deleteContractRule(cruId: string) {
+	const result = await db
+		.from(CRU__ContractRule)
+		.delete()
+		.where((q) => q.where(eq(CRU__ContractRule.__id, cruId)))
+		.execute();
+
+	if (result.error) {
+		console.warn(
+			`Warning: Failed to delete ContractRule ${cruId}:`,
+			result.error,
+		);
+	}
+}
+
+/**
+ * List all CRU__ContractRule records for a given contract.
+ * Useful for diagnostics and pre-test verification.
+ */
+export async function getContractRules(contractId: string) {
+	const result = await db
+		.from(CRU__ContractRule)
+		.list()
+		.where(eq(CRU__ContractRule._contract_id, contractId))
+		.execute();
+
+	if (result.error)
+		throw new Error(`Failed to list ContractRules: ${result.error}`);
+	return result.data;
 }

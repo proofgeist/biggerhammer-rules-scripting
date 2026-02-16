@@ -18,8 +18,8 @@
 
 import { eq } from "@proofkit/fmodata";
 import { afterAll, describe, expect, it } from "vitest";
-import { CTR__Contract, db } from "../../src/client.js";
-import { cleanupAll } from "../helpers/cleanup.js";
+import { CTR__Contract, db } from "../../../src/client.js";
+import { cleanupAll } from "../../helpers/cleanup.js";
 import {
 	applyRules,
 	assertId,
@@ -27,7 +27,7 @@ import {
 	createTimeCard,
 	getResultTCLs,
 	requireEnv,
-} from "../helpers/factories.js";
+} from "../../helpers/factories.js";
 
 const TEST_DATE = "2026-03-23";
 

@@ -25,7 +25,7 @@
  * This inflates billed hours by ~5+ hours.
  */
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanupAll } from "../helpers/cleanup.js";
+import { cleanupAll } from "../../helpers/cleanup.js";
 import {
 	applyRules,
 	assertId,
@@ -33,7 +33,7 @@ import {
 	createTimeCard,
 	getResultTCLs,
 	requireEnv,
-} from "../helpers/factories.js";
+} from "../../helpers/factories.js";
 
 const TEST_DATE = "2026-04-13";
 

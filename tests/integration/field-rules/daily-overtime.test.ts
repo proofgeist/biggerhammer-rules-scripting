@@ -14,7 +14,7 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanupAll } from "../helpers/cleanup.js";
+import { cleanupAll } from "../../helpers/cleanup.js";
 import {
 	applyRules,
 	assertId,
@@ -24,7 +24,7 @@ import {
 	getResultTCLs,
 	parseTimeToHours,
 	requireEnv,
-} from "../helpers/factories.js";
+} from "../../helpers/factories.js";
 
 // Each test uses a unique date to prevent overlapping clock records
 // when multiple TCDs exist for the same contact during the test run.

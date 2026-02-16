@@ -7,7 +7,7 @@
  * Uses a contract where minimums_are_worked_time = True (the "worked" path).
  */
 import { afterAll, describe, expect, it } from "vitest";
-import { cleanupAll } from "../helpers/cleanup.js";
+import { cleanupAll } from "../../helpers/cleanup.js";
 import {
 	applyRules,
 	assertId,
@@ -15,7 +15,7 @@ import {
 	createTimeCard,
 	getResultTCLs,
 	requireEnv,
-} from "../helpers/factories.js";
+} from "../../helpers/factories.js";
 
 // Each test uses a unique date to avoid overlap detection across test runs
 const TEST_DATE_1 = "2026-03-02";
