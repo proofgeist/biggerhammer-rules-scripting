@@ -17,7 +17,10 @@ import {
 	applyRules,
 	assertId,
 	createClockTCL,
+	createContractRule,
 	createTimeCard,
+	deleteContractRule,
+	findRule,
 	getContract,
 	getResultTCLs,
 	parseTimeToHours,
@@ -30,8 +33,12 @@ const TEST_DATE_E3 = "2026-07-08";
 
 describe("Minimum Call Edge Cases", () => {
 	const createdTcdIds: string[] = [];
+	const createdCruIds: string[] = [];
 
 	afterAll(async () => {
+		for (const cruId of createdCruIds) {
+			await deleteContractRule(cruId);
+		}
 		await cleanupAll(createdTcdIds);
 	});
 
@@ -61,9 +68,19 @@ describe("Minimum Call Edge Cases", () => {
 			return;
 		}
 
-		// Note: The 2-tier rule uses hour1/hour2 from the Contract Rules (CRU) record,
-		// not the contract's hrs_minimum_call. If the contract only has a single minimum,
-		// hour1 == hour2. We test the behavior with whatever the contract has configured.
+		// Ensure a Minimum Calls CRU exists for this contract so the MC rule fires.
+		// The 2-tier rule uses hour1/hour2 from the CRU record.
+		const rule = await findRule("Minimum Calls");
+		const cru = await createContractRule({
+			ruleId: rule.__id!,
+			contractId,
+			hour1: hrsMinCall,
+			multiplier1: 1,
+			scope: "",
+		});
+		const cruId = assertId(cru);
+		createdCruIds.push(cruId);
+		console.log(`Created Minimum Calls CRU: ${cruId} (hour1=${hrsMinCall})`);
 
 		const tcd = await createTimeCard({
 			contactId,

@@ -11,7 +11,11 @@ import {
 	applyRules,
 	assertId,
 	createClockTCL,
+	createContractRule,
 	createTimeCard,
+	deleteContractRule,
+	findRule,
+	getContract,
 	getResultTCLs,
 	requireEnv,
 } from "../../helpers/factories.js";
@@ -22,8 +26,12 @@ const TEST_DATE_2 = "2026-04-07";
 
 describe("Regression — minimums_are_worked_time = True", () => {
 	const createdTcdIds: string[] = [];
+	const createdCruIds: string[] = [];
 
 	afterAll(async () => {
+		for (const cruId of createdCruIds) {
+			await deleteContractRule(cruId);
+		}
 		await cleanupAll(createdTcdIds);
 	});
 
@@ -31,6 +39,30 @@ describe("Regression — minimums_are_worked_time = True", () => {
 		const contactId = requireEnv("TEST_CONTACT_ID");
 		const eventId = requireEnv("TEST_EVENT_ID");
 		const contractId = requireEnv("TEST_CONTRACT_ID_WORKED");
+
+		const contract = await getContract(contractId);
+		const hrsMinCall = contract.hrs_minimum_call ?? 0;
+		console.log(
+			`Contract: hrs_minimum_call=${hrsMinCall}, minimums_are_worked_time=${contract.minimums_are_worked_time}`,
+		);
+
+		if (hrsMinCall <= 0) {
+			console.warn("Skipping: hrs_minimum_call not configured on this contract.");
+			return;
+		}
+
+		// Ensure a Minimum Calls CRU exists for this contract
+		const rule = await findRule("Minimum Calls");
+		const cru = await createContractRule({
+			ruleId: rule.__id!,
+			contractId,
+			hour1: hrsMinCall,
+			multiplier1: 1,
+			scope: "",
+		});
+		const cruId = assertId(cru);
+		createdCruIds.push(cruId);
+		console.log(`Created Minimum Calls CRU: ${cruId} (hour1=${hrsMinCall})`);
 
 		const tcd = await createTimeCard({
 			contactId,

@@ -120,6 +120,13 @@ export async function createClockTCL(params: {
 	contractJobTitleId?: string;
 	companyId?: string;
 	vendorId?: string;
+	ignoreOvertime?: boolean;
+	ignoreNightRate?: boolean;
+	ignoreMealPenatly?: boolean;
+	ignoreGracePeriod?: boolean;
+	ignoreHoliday?: boolean;
+	ignoreMinimumCall?: boolean;
+	ignoreEarly?: boolean;
 }) {
 	// Resolve CJT: explicit param > contract-specific env var > OData lookup
 	const cjtId =
@@ -146,6 +153,13 @@ export async function createClockTCL(params: {
 			isPaidMeal: 0,
 			isFlat: 0,
 			isAfterMidnight: 0,
+			ignoreOvertime: params.ignoreOvertime ? 1 : 0,
+			ignoreNightRate: params.ignoreNightRate ? 1 : 0,
+			ignoreMealPenatly: params.ignoreMealPenatly ? 1 : 0,
+			ignoreGracePeriod: params.ignoreGracePeriod ? 1 : 0,
+			ignoreHoliday: params.ignoreHoliday ? 1 : 0,
+			ignoreMinimumCall: params.ignoreMinimumCall ? 1 : 0,
+			ignoreEarly: params.ignoreEarly ? 1 : 0,
 		})
 		.execute();
 
@@ -420,5 +434,17 @@ export async function getContractRules(contractId: string) {
 
 	if (result.error)
 		throw new Error(`Failed to list ContractRules: ${result.error}`);
+	return result.data;
+}
+
+/**
+ * List all master Rule records. Useful for discovering which rules
+ * are available in the system for testing.
+ */
+export async function listRules() {
+	const result = await db.from(RUL__Rule).list().execute();
+
+	if (result.error)
+		throw new Error(`Failed to list Rules: ${result.error}`);
 	return result.data;
 }
