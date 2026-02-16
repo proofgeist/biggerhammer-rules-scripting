@@ -141,14 +141,14 @@ describe("B/A Edge Cases", () => {
 			}
 		}
 
-		// Total work after unpaid meal = 0.25 (Clock 2) + 0.25 (Clock 3) = 0.5 hrs
-		// $since_unpaid_meal should be 0.5 hrs at Part 3
-		// $since_last_meal should be 0.25 hrs at Part 3 (reset by paid meal)
+		// Total time after unpaid meal:
+		//   Clock 2: 0.25 hrs + Paid Meal: 0.25 hrs + Clock 3: 0.25 hrs = 0.75 hrs
+		// $since_unpaid_meal accumulates ALL TCL durations (including paid meals)
+		// so it should be 0.75 at Part 3.
+		// $since_last_meal resets at paid meal, so it would be only 0.25 at Part 3.
 		//
-		// CORRECT shortfall: hrsAfter - 0.5
-		// BUG shortfall:     hrsAfter - 0.25 (uses $since_last_meal)
-		//
-		// If bug exists, the after-meal entry will be larger than expected.
+		// CORRECT shortfall (using $since_unpaid_meal): hrsAfter - 0.75
+		// BUG shortfall (using $since_last_meal):       hrsAfter - 0.25
 
 		const afterMealEntries = tcls.all.filter((r) => {
 			if (!r.noteRule) return false;
@@ -165,38 +165,33 @@ describe("B/A Edge Cases", () => {
 					if (outHrs < inHrs) outHrs += 24;
 					const duration = outHrs - inHrs;
 
-					console.log(
-						`  After-meal entry duration: ${duration} hrs ` +
-							`(correct shortfall=${hrsAfter - 0.5}, bug shortfall=${hrsAfter - 0.25})`,
-					);
-
-					// The correct shortfall is hrsAfter - 0.5
-					// If the entry is closer to hrsAfter - 0.25, Bug 1 is present
-					const correctShortfall = hrsAfter - 0.5;
+					// Correct: hrsAfter - 0.75 (all time since unpaid meal, incl. paid meal)
+					// Buggy:   hrsAfter - 0.25 (only time since paid meal reset)
+					const correctShortfall = hrsAfter - 0.75;
 					const bugShortfall = hrsAfter - 0.25;
 
-					const isBuggy = Math.abs(duration - bugShortfall) < 0.1;
-					const isCorrect = Math.abs(duration - correctShortfall) < 0.1;
+					console.log(
+						`  After-meal entry duration: ${duration} hrs ` +
+							`(correct=${correctShortfall}, bug=${bugShortfall})`,
+					);
 
-					if (isBuggy) {
+					if (Math.abs(duration - bugShortfall) < 0.1) {
 						console.warn(
-							"BUG 1 CONFIRMED: After-meal shortfall uses $since_last_meal " +
+							"BUG 1 PRESENT: After-meal shortfall uses $since_last_meal " +
 								`instead of $since_unpaid_meal. Duration=${duration}, ` +
 								`expected=${correctShortfall}, got=${bugShortfall}`,
 						);
 					}
 
-					// Accept either value so the test documents the bug without failing.
-					// When Bug 1 is fixed, the buggy branch will stop matching.
 					expect(
-						isCorrect || isBuggy,
+						duration,
 						`After-meal shortfall should be ~${correctShortfall} hrs ` +
-							`(correct) or ~${bugShortfall} hrs (Bug 1). ` +
-							`Got ${duration} hrs, which matches neither.`,
-					).toBe(true);
+							`(hrsAfter=${hrsAfter} - 0.75 hrs since unpaid meal). ` +
+							`If ${bugShortfall}, Bug 1 ($since_last_meal) is present.`,
+					).toBeCloseTo(correctShortfall, 1);
 				}
 			}
-		} else if (hrsAfter > 0.5) {
+		} else if (hrsAfter > 0.75) {
 			// If no after-meal entries exist but the rule requires > 0.5 hrs,
 			// something else might be preventing Part 3 from firing
 			console.warn(

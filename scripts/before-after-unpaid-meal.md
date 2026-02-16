@@ -343,7 +343,15 @@ If [ not IsEmpty ( $hrs_minimum_call ) 	and $hrs_after_unpaid_meal - $since_unpa
 If [ not $this_IgnoreMinimumCall ]
 #  we need to create a Minimum record.
 If [ $minimums_are_worked_time ]
-Perform Script [ “Create Worked Entry” ; Specified: From list ; Parameter: Let ([ 	~missing		= $hrs_after_unpaid_meal - $since_last_meal; 	~last_out	= GetAsTime ( $last_time_out_ts ); 	~new_out		= ~last_out + ( ~missing * 3600 ) ]; 	List ( 		"iSource="	& Max ( $tcl_loop - 1; 1 ); 		"time_in="	& CF_TimeFormat ( ~last_out ); 		"time_out="	& CF_TimeFormat ( ~new_out ); 		"incl_NT="	& $incl_NT; 		"incl_OT="	& $incl_OT; 		"last_rec="	& True; 		"note="		& "After unpaid meal rule applied"; 	) ) ]
+# *********************
+# CC 02-16-26 chris.corsi@proofgeist.com
+# Bug fix: Changed ~missing calc from $since_last_meal to $since_unpaid_meal.
+# $since_last_meal resets at paid meals, causing the shortfall to be over-calculated
+# when a paid meal follows an unpaid meal. $since_unpaid_meal correctly tracks
+# cumulative work since the last unpaid meal, consistent with the Part 3 guard
+# condition on line 339.
+# *********************
+Perform Script [ "Create Worked Entry" ; Specified: From list ; Parameter: Let ([ 	~missing		= $hrs_after_unpaid_meal - $since_unpaid_meal; 	~last_out	= GetAsTime ( $last_time_out_ts ); 	~new_out		= ~last_out + ( ~missing * 3600 ) ]; 	List ( 		"iSource="	& Max ( $tcl_loop - 1; 1 ); 		"time_in="	& CF_TimeFormat ( ~last_out ); 		"time_out="	& CF_TimeFormat ( ~new_out ); 		"incl_NT="	& $incl_NT; 		"incl_OT="	& $incl_OT; 		"last_rec="	& True; 		"note="		& "After unpaid meal rule applied"; 	) ) ]
 # 
 # 
 # *********************
@@ -353,7 +361,13 @@ Perform Script [ “Create Worked Entry” ; Specified: From list ; Parameter: L
 # *********************
 # 
 Else
-Perform Script [ “Create Unworked Entry” ; Specified: From list ; Parameter: Let ( 	~duration = GetAsTime (( $hrs_after_unpaid_meal - $since_last_meal ) * 3600 ); 	List ( 		"source="		& CF_addPSlashes ( $this_record ); 		"hrsUnworked="	& ~duration; 		"time_in="		& CF_TimeFormat ( GetAsTime ( $last_time_out_ts )); 		"time_out="		& CF_TimeFormat ( GetAsTime ( $last_time_out_ts + ~duration )); 		"incl_NT="		& $incl_NT; 		"incl_OT="		& $incl_OT; 		"note="			& "After unpaid meal rule applied @ " & CF_TimeFormat ( GetAsTime ( $last_time_out_ts )); 	) ) ]
+# *********************
+# CC 02-16-26 chris.corsi@proofgeist.com
+# Bug fix: Changed ~duration calc from $since_last_meal to $since_unpaid_meal.
+# Same issue as worked entry above — $since_last_meal diverges from
+# $since_unpaid_meal when a paid meal occurs after an unpaid meal.
+# *********************
+Perform Script [ "Create Unworked Entry" ; Specified: From list ; Parameter: Let ( 	~duration = GetAsTime (( $hrs_after_unpaid_meal - $since_unpaid_meal ) * 3600 ); 	List ( 		"source="		& CF_addPSlashes ( $this_record ); 		"hrsUnworked="	& ~duration; 		"time_in="		& CF_TimeFormat ( GetAsTime ( $last_time_out_ts )); 		"time_out="		& CF_TimeFormat ( GetAsTime ( $last_time_out_ts + ~duration )); 		"incl_NT="		& $incl_NT; 		"incl_OT="		& $incl_OT; 		"note="			& "After unpaid meal rule applied @ " & CF_TimeFormat ( GetAsTime ( $last_time_out_ts )); 	) ) ]
 # 
 # 
 # *********************
