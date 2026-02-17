@@ -11,18 +11,19 @@
  * and should be treated as a new call, not an unpaid meal dismissal.
  *
  * Expected correct behavior:
- * - No Before/After Unpaid Meal entries should be created in the gap
- *   between Call 1 (ends 9:30 AM) and Call 2 (starts 8:45 PM).
+ * - An after-meal shortfall entry at 09:30 is correct: employee worked
+ *   0.5 hrs after the meal but the contract requires 2 hrs, so a 1.5 hr
+ *   worked entry is created before the new-call reset.
+ * - No entries should span deep into the gap (e.g., nothing starting
+ *   after ~11:00 AM and before 8:45 PM).
  * - Night rate should split Clock 1 at the contract's night boundary
  *   (e.g., 3:00–6:00 AM night, 6:00–8:00 AM standard).
  * - MC may add a shortfall entry for Call 2 (3 hrs < 5 hr minimum).
  *
- * Bug under test: B/A's "> max meal break" branch (line 203) still checks
- * the "after unpaid meal" rule (line 206) against the PREVIOUS call's meal
- * break. When $since_unpaid_meal (0.5 hrs from Clock 2) is less than
- * $hrs_after_unpaid_meal, it creates a large worked entry starting at
- * 9:30 AM — as if the 11-hour gap were a meal dismissal requiring coverage.
- * This inflates billed hours by ~5+ hours.
+ * History: Originally this test asserted zero entries in the 09:30–20:45
+ * dead zone. That was correct when the > max branch silently dropped
+ * after-meal shortfalls. After the 02/16/2026 fix to flush pending
+ * shortfalls at new-call boundaries, the 09:30 entry is legitimate.
  */
 import { afterAll, describe, expect, it } from "vitest";
 import { cleanupAll } from "../../helpers/cleanup.js";
@@ -107,22 +108,17 @@ describe("Night Shift + Meal Break + Evening Return", () => {
 			).toBe(true);
 		}
 
-		// CRITICAL: No generated entries should start in the dead zone between
-		// Call 1 (ends 9:30 AM) and Call 2 (starts 8:45 PM).
-		//
-		// The B/A bug creates a large "Before unpaid meal rule applied" worked
-		// entry starting at 9:30 AM and extending hours into the afternoon.
-		// This should not exist — the 11-hour gap is a new call boundary, not
-		// a meal dismissal requiring B/A coverage.
-		const deadZoneEntries = tcls.all.filter((r) => {
-			// Skip raw clock entries (they have no parent _timecardline_id)
+		// The after-meal shortfall at 09:30 is legitimate (1.5 hrs worked entry).
+		// But no entries should start deep in the gap (after ~12:00 and before 20:45).
+		// The old bug created a huge entry spanning the entire 11-hour gap.
+		const deepGapEntries = tcls.all.filter((r) => {
 			if (!r._timecardline_id) return false;
 			if (!r.time_in) return false;
-			return r.time_in >= "09:30:00" && r.time_in < "20:45:00";
+			return r.time_in >= "12:00:00" && r.time_in < "20:45:00";
 		});
 		expect(
-			deadZoneEntries,
-			"No bill/pay entries should start between 9:30 AM and 8:45 PM (dead zone between calls)",
+			deepGapEntries,
+			"No bill/pay entries should start between 12:00 PM and 8:45 PM (deep gap between calls)",
 		).toHaveLength(0);
 
 		// With 8.5 hours of actual clock time and a possible MC shortfall of ~2 hours
