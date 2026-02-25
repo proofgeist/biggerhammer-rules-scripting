@@ -30,6 +30,7 @@ export const TCL__TimeCardLine = fmTableOccurrence(
     isMisc1: numberField()
       .entityId("FMFID:240519233701")
       .comment("Miscellaneous 1"),
+    isHoliday: numberField().entityId("FMFID:244814200997"),
     isMP1: numberField().entityId("FMFID:253404135589"),
     isMP2: numberField().entityId("FMFID:257699102885"),
     isNightRate: numberField().entityId("FMFID:261994070181"),
@@ -101,6 +102,7 @@ export const TCL__TimeCardLine = fmTableOccurrence(
     isConsecutiveDay6th: numberField().entityId("FMFID:566936748197"),
     isDriveTime: numberField().entityId("FMFID:575526682789"),
     isTurnaround: numberField().entityId("FMFID:579821650085"),
+    isTimeless_c: numberField().readOnly().entityId("FMFID:584116617381"),
     hrsColumn5: numberField()
       .entityId("FMFID:588411584677")
       .comment("a.k.a. hours_DR"),
@@ -110,6 +112,12 @@ export const TCL__TimeCardLine = fmTableOccurrence(
     column_multipliers: textField()
       .entityId("FMFID:665720996005")
       .comment("JSON array of multipliers"),
+    isModified_c: numberField()
+      .readOnly()
+      .entityId("FMFID:674310930597")
+      .comment(
+        "This field is compared to the isModified_calc field to determin if the record has been modified.",
+      ),
     dollarsBaseRateOverride: numberField().entityId("FMFID:678605897893"),
     gl_code_c: textField().readOnly().entityId("FMFID:682900865189"),
     month_year_c: textField().readOnly().entityId("FMFID:687195832485"),
@@ -118,6 +126,7 @@ export const TCL__TimeCardLine = fmTableOccurrence(
     ignoreEarly: numberField().entityId("FMFID:734440472741"),
     ignoreMinimumCall: numberField().entityId("FMFID:738735440037"),
     isContinuity: numberField().entityId("FMFID:747325374629"),
+    isOT_c: numberField().readOnly().entityId("FMFID:751620341925"),
     dollarsVacation_c: numberField().readOnly().entityId("FMFID:755915309221"),
     dollarsTotalAndVacation_c: numberField()
       .readOnly()

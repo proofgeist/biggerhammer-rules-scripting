@@ -255,6 +255,18 @@
             },
             {
               "fieldName": "total_pay_employee_c"
+            },
+            {
+              "fieldName": "isHoliday"
+            },
+            {
+              "fieldName": "isTimeless_c"
+            },
+            {
+              "fieldName": "isModified_c"
+            },
+            {
+              "fieldName": "isOT_c"
             }
           ]
         },

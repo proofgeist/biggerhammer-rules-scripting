@@ -11,6 +11,7 @@
 # @history
 #  12/02/2016 - Marc Berning - Initial Version
 #  03/30/2017 - Marc Berning - Added the assembly and return of the list of Time Card Line IDs to the list of properties
+#  02/25/2026 - Chris Corsi - Fixed column-assignment cascade in bill and unwork sections: moved isMP1/isMP2 check before isHoliday and isDayOfWeek so meal penalty hours on holidays route to hrsColumn4 (MP) instead of hrsColumn1 (OT/Holiday)
 #
 # @assumptions
 #  Context: We are already oriented to a Globals-based layout.
@@ -129,6 +130,10 @@ Set Variable [ $tcl_ids ; Value: $tcl_ids & Evaluate ( $target_table_name & "::"
 Set Variable [ $tclx_array ; Value: GLO_TCL__TimeCardLine::column_multipliers ]
 Set Variable [ $target_field ; Value: "" ]
 #
+# @history 02/25/2026, chris.corsi@proofgeist.com - Moved isMP1/isMP2 check above isHoliday and isDayOfWeek.
+#   create-unworked-entry copies the source clock record verbatim, so an MP entry on a holiday inherits
+#   isHoliday=True. The previous cascade hit isHoliday first, routing the MP hour to hrsColumn1 (OT/Holiday)
+#   instead of hrsColumn4 (MP). Fix: check isMP1/isMP2 before isHoliday and isDayOfWeek.
 #  Identify the appropriate Hours column.
 If [ GLO_TCL__TimeCardLine::isUnpaidMeal ]
 #  This space intentionally left blank.
@@ -138,14 +143,14 @@ Else If [ GLO_TCL__TimeCardLine::isOTDailyL2 or ( GLO_TCL__TimeCardLine::isHolid
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn2 ) ]
 Else If [ ( GLO_TCL__TimeCardLine::isOTDailyL1 or GLO_TCL__TimeCardLine::isOTWeekly or GLO_TCL__TimeCardLine::isConsecutiveDay6th or GLO_TCL__TimeCardLine::isConsecutiveDay7th or GLO_TCL__TimeCardLine::isConsecutiveDay8th ) and not GLO_TCL__TimeCardLine::ignoreOvertime ]
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn1 ) ]
+Else If [ ( GLO_TCL__TimeCardLine::isMP1 or GLO_TCL__TimeCardLine::isMP2 ) and not GLO_TCL__TimeCardLine::ignoreMealPenatly ]
+Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn4 ) ]
 Else If [ GLO_TCL__TimeCardLine::isHoliday and not GLO_TCL__TimeCardLine::ignoreHoliday ]
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn1 ) ]
 Else If [ GLO_TCL__TimeCardLine::isNightRate and not GLO_TCL__TimeCardLine::ignoreNightRate ]
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn3 ) ]
 Else If [ GLO_TCL__TimeCardLine::isDayOfWeek ]
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn1 ) ]
-Else If [ ( GLO_TCL__TimeCardLine::isMP1 or GLO_TCL__TimeCardLine::isMP2 ) and not GLO_TCL__TimeCardLine::ignoreMealPenatly ]
-Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn4 ) ]
 Else
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn0 ) ]
 End If
@@ -248,6 +253,10 @@ Set Variable [ $tcl_ids ; Value: $tcl_ids & Evaluate ( $target_table_name & "::"
 #  Prepare for a/another trip through the loop
 Set Variable [ $target_field ; Value: "" ]
 #
+# @history 02/25/2026, chris.corsi@proofgeist.com - Moved isMP1/isMP2 check above isHoliday and isDayOfWeek.
+#   Mirrors the same fix applied to the bill section above. The unwork cascade had the identical priority
+#   bug: isHoliday was checked before isMP1/isMP2, causing inherited-holiday MP entries to land in
+#   hrsColumn1 (OT/Holiday) instead of hrsColumn4 (MP).
 #  Identify the appropriate Hours column.
 If [ GLO_TCL__TimeCardLine::isUnpaidMeal ]
 #  This space intentionally left blank.
@@ -257,14 +266,14 @@ Else If [ GLO_TCL__TimeCardLine::isOTDailyL2 or Sum ( GLO_TCL__TimeCardLine::isO
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn2 ) ]
 Else If [ ( GLO_TCL__TimeCardLine::isOTDailyL1 or GLO_TCL__TimeCardLine::isOTWeekly ) and not GLO_TCL__TimeCardLine::ignoreOvertime ]
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn1 ) ]
+Else If [ ( GLO_TCL__TimeCardLine::isMP1 or GLO_TCL__TimeCardLine::isMP2 ) and not GLO_TCL__TimeCardLine::ignoreMealPenatly ]
+Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn4 ) ]
 Else If [ GLO_TCL__TimeCardLine::isHoliday and not GLO_TCL__TimeCardLine::ignoreHoliday ]
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn1 ) ]
 Else If [ GLO_TCL__TimeCardLine::isNightRate and not GLO_TCL__TimeCardLine::ignoreNightRate ]
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn3 ) ]
 Else If [ GLO_TCL__TimeCardLine::isDayOfWeek ]
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn1 ) ]
-Else If [ ( GLO_TCL__TimeCardLine::isMP1 or GLO_TCL__TimeCardLine::isMP2 ) and not GLO_TCL__TimeCardLine::ignoreMealPenatly ]
-Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn4 ) ]
 Else
 Set Variable [ $target_field ; Value: GetFieldName ( GLO_TCL__TimeCardLine::hrsColumn0 ) ]
 End If

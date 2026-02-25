@@ -1,4 +1,4 @@
-import { fmTableOccurrence, textField, numberField } from "@proofkit/fmodata";
+import { fmTableOccurrence, numberField, textField } from "@proofkit/fmodata";
 
 export const CRU__ContractRule = fmTableOccurrence(
   "CRU__ContractRule",
